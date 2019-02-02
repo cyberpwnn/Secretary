@@ -7,9 +7,11 @@
 	<version>1.0</version>
 	<name>Secretary</name>
 	<properties>
+		<development.location>${user.home}\Documents\development\servers\dynamic\plugins\${project.name}.jar</development.location>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<skip-copy>false</skip-copy>
 	</properties>
 	<build>
 		<plugins>
@@ -33,6 +35,28 @@
 						</relocation>
 					</relocations>
 					<minimizeJar>false</minimizeJar>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.2</version>
+				<executions>
+					<execution>
+						<id>runbatchfile</id>
+						<phase>package</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<skip>${skip-copy}</skip>
+					<executable>${project.basedir}\scripts\copy.bat</executable>
+					<arguments>
+						<argument>${project.basedir}/target/${project.name}-${project.version}.jar</argument>
+						<argument>${development.location}</argument>
+					</arguments>
 				</configuration>
 			</plugin>
 		</plugins>

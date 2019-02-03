@@ -2,6 +2,8 @@ package com.volmit.secretary;
 
 import com.volmit.secretary.command.CommandSecretary;
 import com.volmit.secretary.services.PluginSVC;
+import com.volmit.secretary.util.nmp.Catalyst;
+import com.volmit.secretary.util.nmp.NMP;
 import com.volmit.volume.bukkit.U;
 import com.volmit.volume.bukkit.VolumePlugin;
 import com.volmit.volume.bukkit.command.Command;
@@ -19,6 +21,7 @@ public class Secretary extends VolumePlugin
 	public void start()
 	{
 		U.startService(PluginSVC.class);
+		NMP.host = Catalyst.host;
 	}
 
 	@Stop

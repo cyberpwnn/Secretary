@@ -19,10 +19,7 @@ public class CommandSecretary extends PawnCommand
 	public CommandDelete delete;
 
 	@Command
-	public CommandSearch search;
-
-	@Command
-	public CommandInstall install;
+	public CommandDev dev;
 
 	public CommandSecretary()
 	{
@@ -37,6 +34,7 @@ public class CommandSecretary extends PawnCommand
 		sender.sendMessage("/sec delete <plugin>");
 		sender.sendMessage("/sec search <query>");
 		sender.sendMessage("/sec install <id>");
+		sender.sendMessage("/sec dev");
 		return true;
 	}
 }

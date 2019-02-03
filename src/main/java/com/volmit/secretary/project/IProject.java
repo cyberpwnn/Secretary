@@ -38,4 +38,6 @@ public interface IProject
 	public void open() throws IOException, Exception;
 
 	public void close();
+
+	public void rebuild();
 }

@@ -14,6 +14,9 @@ public class CommandDev extends PawnCommand
 	@Command
 	public CommandRescan rescan;
 
+	@Command
+	public CommandBuild build;
+
 	public CommandDev()
 	{
 		super("developer", "dev");
@@ -23,6 +26,7 @@ public class CommandDev extends PawnCommand
 	public boolean handle(VolumeSender sender, String[] args)
 	{
 		sender.sendMessage("/sec dev workspace [absolute directory]");
+		sender.sendMessage("/sec dev build <plugin>");
 		sender.sendMessage("/sec dev rescan");
 		U.getService(PluginSVC.class).status(sender);
 

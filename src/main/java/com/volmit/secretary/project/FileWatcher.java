@@ -10,7 +10,7 @@ public class FileWatcher
 {
 	private final FileAlterationMonitor monitor;
 
-	public FileWatcher(File folder, Runnable somethingHappened) throws Exception
+	public FileWatcher(File folder, boolean jarsOnly, Runnable somethingHappened) throws Exception
 	{
 		FileAlterationObserver o = new FileAlterationObserver(folder);
 		o.addListener(new FileAlterationListener()
@@ -28,38 +28,76 @@ public class FileWatcher
 			}
 
 			@Override
-			public void onFileDelete(File var1)
+			public void onFileDelete(File f)
 			{
-				somethingHappened.run();
+				if(jarsOnly)
+				{
+					if(f.isFile() && f.getName().endsWith(".jar"))
+					{
+						somethingHappened.run();
+					}
+				}
+
+				else
+				{
+					somethingHappened.run();
+				}
 			}
 
 			@Override
-			public void onFileCreate(File var1)
+			public void onFileCreate(File f)
 			{
-				somethingHappened.run();
+				if(jarsOnly)
+				{
+					if(f.isFile() && f.getName().endsWith(".jar"))
+					{
+						somethingHappened.run();
+					}
+				}
+
+				else
+				{
+					somethingHappened.run();
+				}
 			}
 
 			@Override
-			public void onFileChange(File var1)
+			public void onFileChange(File f)
 			{
-				somethingHappened.run();
+				if(jarsOnly)
+				{
+					if(f.isFile() && f.getName().endsWith(".jar"))
+					{
+						somethingHappened.run();
+					}
+				}
+
+				else
+				{
+					somethingHappened.run();
+				}
 			}
 
 			@Override
 			public void onDirectoryDelete(File var1)
 			{
-				somethingHappened.run();
+
 			}
 
 			@Override
 			public void onDirectoryCreate(File var1)
 			{
-				somethingHappened.run();
+
 			}
 
 			@Override
-			public void onDirectoryChange(File var1)
+			public void onDirectoryChange(File f)
 			{
+				if(jarsOnly)
+				{
+					return;
+				}
+
 				somethingHappened.run();
 			}
 		});

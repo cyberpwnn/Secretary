@@ -42,6 +42,7 @@ public class MavenProject extends Thread implements IProject
 	private long lastBuild;
 	private int modifiedFiles;
 	private boolean hasSecretary;
+	private boolean req;
 	private volatile boolean rebuild;
 	private volatile boolean ready;
 
@@ -54,6 +55,7 @@ public class MavenProject extends Thread implements IProject
 		modifiedFiles = 0;
 		hasSecretary = false;
 		ready = true;
+		req = false;
 		scanProjectMetadata();
 		setName(getProjectName() + "'s Secretary");
 	}
@@ -81,6 +83,16 @@ public class MavenProject extends Thread implements IProject
 				if(M.ms() - lastBuild > 2000 && rebuild && ready)
 				{
 					rebuild = false;
+
+					if(!req && getMonitor().equals(MonitorMode.TARGET))
+					{
+						Thread.sleep(1500);
+						J.s(() -> install());
+						ready = true;
+						return;
+					}
+
+					req = false;
 
 					try
 					{
@@ -147,6 +159,7 @@ public class MavenProject extends Thread implements IProject
 		}
 
 		watching = getMonitor().equals(MonitorMode.TARGET) ? getTargetDirectory() : getSrcDirectory();
+		status = "Monitoring " + watching.getName();
 	}
 
 	@Override
@@ -296,7 +309,15 @@ public class MavenProject extends Thread implements IProject
 	public void open() throws Exception
 	{
 		System.out.println("Watcher started");
-		watcher = new FileWatcher(getWatchedDirectory(), () -> rebuild = true);
+		watcher = new FileWatcher(getWatchedDirectory(), getMonitor().equals(MonitorMode.TARGET), () -> requestRebuild());
+	}
+
+	private void requestRebuild()
+	{
+		if(ready)
+		{
+			rebuild = true;
+		}
 	}
 
 	private void rebuildProject()
@@ -365,7 +386,7 @@ public class MavenProject extends Thread implements IProject
 		GList<String> pars = new GList<>();
 		pars.add("cmd");
 		pars.add("/c");
-		pars.add(Secretary.vpi.getDataFile("cache", "maven", "apache-maven-3.6.0", "bin", "mvn").getAbsolutePath());
+		pars.add(Secretary.vpi.getDataFile("caches", "maven", "apache-maven-3.6.0", "bin", "mvn").getAbsolutePath());
 		pars.add(getRunCommand().split("\\Q \\E"));
 		ProcessBuilder pb = new ProcessBuilder(pars.toArray(new String[pars.size()]));
 		pb.directory(getRootDirectory());
@@ -416,5 +437,12 @@ public class MavenProject extends Thread implements IProject
 	public String getRunCommand()
 	{
 		return runcommand;
+	}
+
+	@Override
+	public void rebuild()
+	{
+		req = true;
+		requestRebuild();
 	}
 }

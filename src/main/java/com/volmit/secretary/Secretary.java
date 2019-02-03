@@ -1,6 +1,9 @@
 package com.volmit.secretary;
 
+import com.volmit.secretary.command.CommandBuild;
+import com.volmit.secretary.command.CommandDev;
 import com.volmit.secretary.command.CommandSecretary;
+import com.volmit.secretary.command.CommandWorkspace;
 import com.volmit.secretary.services.PluginSVC;
 import com.volmit.secretary.util.nmp.Catalyst;
 import com.volmit.secretary.util.nmp.NMP;
@@ -16,6 +19,15 @@ public class Secretary extends VolumePlugin
 {
 	@Command
 	public CommandSecretary cmdSec;
+
+	@Command
+	public CommandDev cmdDev;
+
+	@Command
+	public CommandBuild cmdBuild;
+
+	@Command
+	public CommandWorkspace cmdWorkspace;
 
 	@Start
 	public void start()

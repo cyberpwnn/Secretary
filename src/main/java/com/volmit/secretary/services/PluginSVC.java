@@ -1056,4 +1056,15 @@ public class PluginSVC implements IService
 			}
 		}
 	}
+
+	public void doRebuild(VolumeSender sender, String string)
+	{
+		for(IProject i : pluginProjects.k())
+		{
+			if(string.equalsIgnoreCase(i.getProjectName()) || string.equalsIgnoreCase(i.getArtifactId()))
+			{
+				i.rebuild();
+			}
+		}
+	}
 }

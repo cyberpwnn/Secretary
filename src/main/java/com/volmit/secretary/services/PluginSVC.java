@@ -531,29 +531,21 @@ public class PluginSVC implements IService
 	{
 		Plugin plugin = pluginProjects.get(mavenProject);
 		pluginProjects.remove(mavenProject);
-		File f = null;
+		File ff = new File(new File("plugins"), artifact.getName());
 
-		if(hotFiles.containsKey(plugin))
+		try
 		{
-			f = hotFiles.get(plugin);
-		}
-
-		else
-		{
-			try
+			if(plugin != null)
 			{
-				f = getFileFor(plugin);
-			}
-
-			catch(Throwable e)
-			{
-				// TODO Try some other way?
-				return;
+				delete(plugin);
 			}
 		}
 
-		File ff = new File(f.getParentFile(), artifact.getName());
-		delete(plugin);
+		catch(Throwable e)
+		{
+
+		}
+
 		Files.copy(artifact, ff);
 		Plugin np = load(ff);
 

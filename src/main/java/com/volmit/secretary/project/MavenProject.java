@@ -86,6 +86,7 @@ public class MavenProject extends Thread implements IProject
 
 					if(!req && getMonitor().equals(MonitorMode.TARGET))
 					{
+						status = "Injecting";
 						Thread.sleep(1500);
 						J.s(() -> install());
 						ready = true;
@@ -96,11 +97,13 @@ public class MavenProject extends Thread implements IProject
 
 					try
 					{
+						status = "Rebuilding";
 						rebuildProject();
 					}
 
 					catch(Throwable e)
 					{
+						status = "Monitoring " + watching.getName();
 						ready = true;
 					}
 				}
@@ -331,7 +334,7 @@ public class MavenProject extends Thread implements IProject
 		{
 			failure = "Failed to read pom.xml correctly.";
 			verifyMetadata();
-
+			status = "Rebuilding";
 			failure = "Failed to start maven build with command " + runcommand;
 			Profiler px = new Profiler();
 			px.begin();
@@ -340,11 +343,13 @@ public class MavenProject extends Thread implements IProject
 			{
 				log("Build Successful on " + getProjectName() + " in " + F.time(px.getMilliseconds(), 2));
 				px.end();
+				status = "Injecting";
 				J.s(() -> install());
 			}
 
 			else
 			{
+				status = "Monitoring " + watching.getName();
 				ready = true;
 				log("Build Failure on " + getProjectName() + ". Took " + F.time(px.getMilliseconds(), 2));
 				return;
@@ -374,6 +379,7 @@ public class MavenProject extends Thread implements IProject
 		}
 
 		ready = true;
+		status = "Monitoring " + watching.getName();
 	}
 
 	private File getArtifact()

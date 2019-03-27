@@ -65,16 +65,22 @@ public class PluginSVC implements IService
 	private NetCache<File, PluginDescriptionFile> descriptionCache;
 	private NetCache<String, JSONObject> resourceCache;
 	private GMap<IProject, Plugin> pluginProjects;
+	private GList<IProject> emptyProjects;
 	private GMap<Plugin, File> hotFiles;
 	private SpigetClient spiget;
 
 	public void status(VolumeSender sender)
 	{
-		sender.sendMessage("There " + (pluginProjects.size() == 1 ? "is " : "are ") + pluginProjects.size() + " monitored project" + (pluginProjects.size() == 1 ? "" : "s") + ".");
+		sender.sendMessage("There " + ((pluginProjects.size() + emptyProjects.size()) == 1 ? "is " : "are ") + (pluginProjects.size() + emptyProjects.size()) + " monitored project" + ((pluginProjects.size() + emptyProjects.size()) == 1 ? "" : "s") + ".");
 
 		for(IProject i : pluginProjects.k())
 		{
 			sender.sendMessage("* " + ChatColor.WHITE + i.toString() + ChatColor.GRAY + " -> " + ChatColor.GREEN + ChatColor.BOLD + i.getStatus());
+		}
+
+		for(IProject i : emptyProjects.copy())
+		{
+			sender.sendMessage("* " + ChatColor.WHITE + i.toString() + ChatColor.GRAY + " -> " + ChatColor.GREEN + ChatColor.BOLD + i.getStatus() + ChatColor.RESET + ChatColor.YELLOW + " (not in server yet)");
 		}
 	}
 
@@ -142,6 +148,8 @@ public class PluginSVC implements IService
 
 							if(proj.hasSecretary())
 							{
+								boolean fx = false;
+
 								for(Plugin j : Bukkit.getPluginManager().getPlugins())
 								{
 									String mainPath = j.getDescription().getMain().replaceAll("\\Q.\\E", "/");
@@ -151,8 +159,16 @@ public class PluginSVC implements IService
 										pluginProjects.put(proj, j);
 										((MavenProject) proj).start();
 										System.out.println("Found Project: " + proj.toString());
+										fx = true;
 										break;
 									}
+								}
+
+								if(!fx)
+								{
+									System.out.println("Found Project: " + proj.toString() + " (couldnt find the plugin on the server yet though)");
+									emptyProjects.add(proj);
+									((MavenProject) proj).start();
 								}
 							}
 						}
@@ -185,6 +201,7 @@ public class PluginSVC implements IService
 		descriptionCache = new NetCache<File, PluginDescriptionFile>((f) -> getActualDescription(f));
 		spiget = new SpigetClient();
 		pluginProjects = new GMap<>();
+		emptyProjects = new GList<>();
 		handleMaven();
 	}
 
@@ -529,21 +546,30 @@ public class PluginSVC implements IService
 
 	public void reinstall(MavenProject mavenProject, File artifact) throws IOException
 	{
-		Plugin plugin = pluginProjects.get(mavenProject);
-		pluginProjects.remove(mavenProject);
 		File ff = new File(new File("plugins"), artifact.getName());
 
-		try
+		if(emptyProjects.contains(mavenProject))
 		{
-			if(plugin != null)
-			{
-				delete(plugin);
-			}
+			emptyProjects.remove(mavenProject);
 		}
 
-		catch(Throwable e)
+		else
 		{
+			Plugin plugin = pluginProjects.get(mavenProject);
+			pluginProjects.remove(mavenProject);
 
+			try
+			{
+				if(plugin != null)
+				{
+					delete(plugin);
+				}
+			}
+
+			catch(Throwable e)
+			{
+
+			}
 		}
 
 		Files.copy(artifact, ff);

@@ -148,7 +148,7 @@ public class PluginSVC implements IService
 						{
 							IProject proj = new MavenProject(i);
 
-							if(true || proj.hasSecretary())
+							if(proj.hasSecretary())
 							{
 								boolean fx = false;
 

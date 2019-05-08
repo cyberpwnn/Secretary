@@ -22,6 +22,8 @@ public interface IProject
 	public File getWatchedDirectory();
 
 	public File getSrcDirectory();
+	
+	public File getArtifact();
 
 	public String getProjectName();
 

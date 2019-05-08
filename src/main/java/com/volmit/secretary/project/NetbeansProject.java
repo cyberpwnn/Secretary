@@ -3,7 +3,6 @@ package com.volmit.secretary.project;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.maven.model.Model;
@@ -13,7 +12,6 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import com.volmit.secretary.Secretary;
 import com.volmit.secretary.services.PluginSVC;
 import com.volmit.secretary.util.nmp.FrameType;
 import com.volmit.secretary.util.nmp.J;
@@ -21,39 +19,31 @@ import com.volmit.secretary.util.nmp.NMP;
 import com.volmit.volume.bukkit.U;
 import com.volmit.volume.bukkit.task.S;
 import com.volmit.volume.bukkit.util.text.C;
-import com.volmit.volume.lang.collections.GList;
-import com.volmit.volume.lang.format.F;
 import com.volmit.volume.math.M;
-import com.volmit.volume.math.Profiler;
+import java.nio.CharBuffer;
 
-public class MavenProject extends Thread implements IProject
+public class NetbeansProject extends Thread implements IProject
 {
 	private File rootDirectory;
 	private File watching;
-	private String version;
-	private String groupId;
-	private String artifactId;
 	private String name;
-	private String runcommand;
 	private String status;
 	private MonitorMode monitor;
 	private FileWatcher watcher;
 	private long lastModification;
 	private long lastBuild;
 	private int modifiedFiles;
-	private boolean hasSecretary;
 	private boolean req;
 	private volatile boolean rebuild;
 	private volatile boolean ready;
 
-	public MavenProject(File rootDirectory) throws Exception
+	public NetbeansProject(File rootDirectory) throws Exception
 	{
 		this.rootDirectory = rootDirectory;
 		lastModification = M.ms();
 		lastBuild = M.ms();
 		status = "Idle";
 		modifiedFiles = 0;
-		hasSecretary = false;
 		ready = true;
 		req = false;
 		scanProjectMetadata();
@@ -119,47 +109,25 @@ public class MavenProject extends Thread implements IProject
 	@Override
 	public void scanProjectMetadata() throws Exception
 	{
-		File pom = new File(rootDirectory, "pom.xml");
+		File pom = new File(rootDirectory, "build.xml");
 
 		if(!pom.exists())
 		{
-			throw new FileNotFoundException("Cannot find the pom.xml");
+			throw new FileNotFoundException("Cannot find the build.xml");
 		}
-
-		MavenXpp3Reader reader = new MavenXpp3Reader();
-		Model model = reader.read(new FileReader(getRootDirectory().getAbsolutePath() + "/pom.xml"));
-		version = model.getVersion();
-		artifactId = model.getArtifactId();
-		groupId = model.getArtifactId();
-		name = model.getName();
-		Properties props = model.getProperties();
+		// This is really hacky, but it works ;)
+		FileReader r = new FileReader(pom);
+		char[] cb = new char[9000];
+		int last = r.read(cb);
+		r.close();
+		String d = String.copyValueOf(cb, 0, last);
+		int i = d.indexOf("<project name=\"") + "<project name=\"".length();
+		int j = i < 20 ? -1 : d.indexOf("\"", i);
+		if(j != -1) {
+			name = d.substring(i, j);
+		}
+		
 		monitor = MonitorMode.TARGET;
-
-		try
-		{
-			monitor = MonitorMode.valueOf(props.getProperty("secretary.monitor").toUpperCase());
-			hasSecretary = true;
-		}
-
-		catch(Throwable e)
-		{
-
-		}
-
-		try
-		{
-			runcommand = props.getProperty("secretary.build", "package");
-
-			if(!runcommand.equals("package"))
-			{
-				hasSecretary = true;
-			}
-		}
-
-		catch(Throwable e)
-		{
-
-		}
 
 		watching = getMonitor().equals(MonitorMode.TARGET) ? getTargetDirectory() : getSrcDirectory();
 		status = "Monitoring " + watching.getName();
@@ -179,34 +147,19 @@ public class MavenProject extends Thread implements IProject
 	@Override
 	public String getVersion()
 	{
-		return version;
-	}
-
-	public void setVersion(String version)
-	{
-		this.version = version;
+		return "";
 	}
 
 	@Override
 	public String getGroupId()
 	{
-		return groupId;
-	}
-
-	public void setGroupId(String groupId)
-	{
-		this.groupId = groupId;
+		return name;
 	}
 
 	@Override
 	public String getArtifactId()
 	{
-		return artifactId;
-	}
-
-	public void setArtifactId(String artifactId)
-	{
-		this.artifactId = artifactId;
+		return name;
 	}
 
 	@Override
@@ -270,7 +223,7 @@ public class MavenProject extends Thread implements IProject
 	@Override
 	public File getTargetDirectory()
 	{
-		return new File(getRootDirectory(), "target");
+		return new File(getRootDirectory(), "dist");
 	}
 
 	@Override
@@ -299,13 +252,13 @@ public class MavenProject extends Thread implements IProject
 	@Override
 	public boolean hasSecretary()
 	{
-		return hasSecretary;
+		return true;
 	}
 
 	@Override
 	public String toString()
 	{
-		return getGroupId() + ":" + getArtifactId() + ":" + getVersion() + " (" + getProjectName() + ")";
+		return getGroupId() + ":" + getArtifactId() + " (" + getProjectName() + ")";
 	}
 
 	@Override
@@ -328,40 +281,19 @@ public class MavenProject extends Thread implements IProject
 		ready = false;
 		log("Building " + getProjectName());
 		lastBuild = M.ms();
-		String failure = "";
+		String failure = "Install";
 
 		try
 		{
-			failure = "Failed to read pom.xml correctly.";
-			verifyMetadata();
-			status = "Rebuilding";
-			failure = "Failed to start maven build with command " + runcommand;
-			Profiler px = new Profiler();
-			px.begin();
-
-			if(buildProject())
-			{
-				log("Build Successful on " + getProjectName() + " in " + F.time(px.getMilliseconds(), 2));
-				px.end();
-				status = "Injecting";
-				J.s(() -> install());
-			}
-
-			else
-			{
-				status = "Monitoring " + watching.getName();
-				ready = true;
-				log("Build Failure on " + getProjectName() + ". Took " + F.time(px.getMilliseconds(), 2));
-				return;
-			}
+			J.s(() -> install());
 		}
 
 		catch(Throwable e)
 		{
 			log("Failure on " + getProjectName() + " (" + failure + ")");
 			e.printStackTrace();
-			ready = true;
 		}
+		ready = true;
 	}
 
 	private void install()
@@ -385,47 +317,7 @@ public class MavenProject extends Thread implements IProject
 	@Override
 	public File getArtifact()
 	{
-		return new File(getTargetDirectory(), getProjectName() + "-" + getVersion() + ".jar");
-	}
-
-	private boolean buildProject() throws IOException, InterruptedException
-	{
-		GList<String> pars = new GList<>();
-		pars.add("cmd");
-		pars.add("/c");
-		pars.add(Secretary.vpi.getDataFile("caches", "maven", "apache-maven-3.6.0", "bin", "mvn").getAbsolutePath());
-		pars.add(getRunCommand().split("\\Q \\E"));
-		ProcessBuilder pb = new ProcessBuilder(pars.toArray(new String[pars.size()]));
-		pb.directory(getRootDirectory());
-		Process p = pb.start();
-		new StreamGobbler(p.getErrorStream(), (log) -> log("Build Error: " + log));
-		return p.waitFor() == 0;
-	}
-
-	private void verifyMetadata() throws Exception
-	{
-		int mon = getMonitor().ordinal();
-		scanProjectMetadata();
-
-		if(mon != getMonitor().ordinal())
-		{
-			resetWatcher();
-		}
-	}
-
-	private void resetWatcher()
-	{
-		close();
-
-		try
-		{
-			open();
-		}
-
-		catch(Exception e)
-		{
-			e.printStackTrace();
-		}
+		return new File(getTargetDirectory(), getProjectName() + ".jar");
 	}
 
 	@Override
@@ -443,7 +335,7 @@ public class MavenProject extends Thread implements IProject
 	@Override
 	public String getRunCommand()
 	{
-		return runcommand;
+		return null;
 	}
 
 	@Override

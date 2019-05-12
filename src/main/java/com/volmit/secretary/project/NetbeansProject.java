@@ -80,7 +80,7 @@ public class NetbeansProject extends Thread implements IProject
 						Thread.sleep(1500);
 						J.s(() -> install());
 						ready = true;
-						return;
+						continue;
 					}
 
 					req = false;

@@ -119,6 +119,7 @@ public class MavenProject extends Thread implements IProject
 	@Override
 	public void scanProjectMetadata() throws Exception
 	{
+		System.out.print("Scanning " + rootDirectory.getPath());
 		File pom = new File(rootDirectory, "pom.xml");
 
 		if(!pom.exists())
@@ -392,11 +393,12 @@ public class MavenProject extends Thread implements IProject
 		GList<String> pars = new GList<>();
 		pars.add("cmd");
 		pars.add("/c");
-		pars.add(Secretary.vpi.getDataFile("caches", "maven", "apache-maven-3.6.0", "bin", "mvn").getAbsolutePath());
+		pars.add(Secretary.vpi.getDataFile("caches", "maven", "apache-maven-3.6.2", "bin", "mvn").getAbsolutePath());
 		pars.add(getRunCommand().split("\\Q \\E"));
 		ProcessBuilder pb = new ProcessBuilder(pars.toArray(new String[pars.size()]));
 		pb.directory(getRootDirectory());
 		Process p = pb.start();
+		new StreamGobbler(p.getInputStream(), (log) -> System.out.println(name + ": " + log));
 		new StreamGobbler(p.getErrorStream(), (log) -> log("Build Error: " + log));
 		return p.waitFor() == 0;
 	}

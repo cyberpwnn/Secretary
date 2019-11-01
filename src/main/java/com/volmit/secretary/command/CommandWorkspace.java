@@ -57,7 +57,7 @@ public class CommandWorkspace extends PawnCommand
 
 			else
 			{
-				sender.sendMessage("Unable to locate foldler " + C.WHITE + ws);
+				sender.sendMessage("Unable to locate folder " + C.WHITE + ws);
 			}
 		}
 

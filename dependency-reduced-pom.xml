@@ -69,8 +69,8 @@
       <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
     </repository>
     <repository>
-      <id>volmit</id>
-      <url>http://nexus.volmit.com/content/repositories/volmit</url>
+      <id>pub</id>
+      <url>http://nexus.mpm.care/content/repositories/pub</url>
     </repository>
     <repository>
       <id>central</id>
@@ -157,7 +157,7 @@
     <skip-copy>false</skip-copy>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
-    <development.location>${user.home}\Documents\development\servers\dynamic\plugins\${project.name}.jar</development.location>
+    <development.location>${user.home}\Documents\development\server\plugins\${project.name}.jar</development.location>
     <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
 </project>

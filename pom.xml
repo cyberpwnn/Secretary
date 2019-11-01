@@ -7,7 +7,7 @@
 	<version>1.0</version>
 	<name>Secretary</name>
 	<properties>
-		<development.location>${user.home}\Documents\development\servers\dynamic\plugins\${project.name}.jar</development.location>
+		<development.location>${user.home}\Documents\development\server\plugins\${project.name}.jar</development.location>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -78,8 +78,8 @@
 			<url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
 		</repository>
 		<repository>
-			<id>volmit</id>
-			<url>http://nexus.volmit.com/content/repositories/volmit</url>
+			<id>pub</id>
+			<url>http://nexus.mpm.care/content/repositories/pub</url>
 		</repository>
 		<repository>
 			<id>central</id>
@@ -100,12 +100,12 @@
 		<dependency>
 			<groupId>com.volmit</groupId>
 			<artifactId>VolumeReflect</artifactId>
-			<version>1.1</version>
+			<version>1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>com.volmit</groupId>
 			<artifactId>VolumeCluster</artifactId>
-			<version>1.1</version>
+			<version>1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.spiget</groupId>
@@ -136,22 +136,22 @@
 		<dependency>
 			<groupId>com.volmit</groupId>
 			<artifactId>VolumePlugin</artifactId>
-			<version>1.1</version>
+			<version>1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>com.volmit</groupId>
 			<artifactId>VolumeNMS</artifactId>
-			<version>1.1</version>
+			<version>1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>com.volmit</groupId>
 			<artifactId>VolumeMath</artifactId>
-			<version>1.1</version>
+			<version>1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>com.volmit</groupId>
 			<artifactId>VolumeLang</artifactId>
-			<version>1.1</version>
+			<version>1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.spiget</groupId>

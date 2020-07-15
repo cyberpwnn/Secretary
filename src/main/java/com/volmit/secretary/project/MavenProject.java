@@ -19,6 +19,7 @@ import com.volmit.volume.bukkit.task.S;
 import com.volmit.volume.bukkit.util.text.C;
 import com.volmit.volume.lang.collections.GList;
 import com.volmit.volume.lang.format.F;
+import com.volmit.volume.lang.queue.ChronoLatch;
 import com.volmit.volume.math.M;
 import com.volmit.volume.math.Profiler;
 
@@ -95,6 +96,7 @@ public class MavenProject extends Thread implements IProject
 					{
 						status = "Rebuilding";
 						rebuildProject();
+						rebuild = false;
 					}
 
 					catch(Throwable e)
@@ -124,6 +126,7 @@ public class MavenProject extends Thread implements IProject
 		}
 
 		MavenXpp3Reader reader = new MavenXpp3Reader();
+		reader.setAddDefaultEntities(false);
 		Model model = reader.read(new FileInputStream(getRootDirectory().getAbsolutePath() + "/pom.xml"));
 
 		version = model.getVersion();
@@ -236,21 +239,21 @@ public class MavenProject extends Thread implements IProject
 				for(Player i : Bukkit.getOnlinePlayers())
 				{
 					i.sendMessage(tag + s);
+				}
 
-					if(s.toLowerCase().contains("injected"))
-					{
-						i.playSound(i.getLocation(), MSound.EYE_DEATH.bukkitSound(), 0.65f, 1.21f);
-					}
+				if(s.toLowerCase().contains("injected"))
+				{
+					Secretary.play("success");
+				}
 
-					if(s.toLowerCase().contains("building "))
-					{
-						i.playSound(i.getLocation(), MSound.FRAME_FILL.bukkitSound(), 0.65f, 1.21f);
-					}
+				if(s.toLowerCase().contains("building "))
+				{
+					Secretary.play("started");
+				}
 
-					if(s.toLowerCase().contains("failed"))
-					{
-						i.playSound(i.getLocation(), MSound.ECHEST_OPEN.bukkitSound(), 0.65f, 0.21f);
-					}
+				if(s.toLowerCase().contains("failed") || s.toLowerCase().contains("failure"))
+				{
+					Secretary.play("failed");
 				}
 
 				Bukkit.getConsoleSender().sendMessage(tag + s);
@@ -308,20 +311,51 @@ public class MavenProject extends Thread implements IProject
 	@Override
 	public void open() throws Exception
 	{
-		System.out.println("Watcher started");
-		watcher = new FileWatcher(getWatchedDirectory(), getMonitor().equals(MonitorMode.TARGET), () -> requestRebuild());
+		watcher = new FileWatcher(getWatchedDirectory(), getMonitor().equals(MonitorMode.TARGET), false, () -> requestRebuild());
 	}
 
 	private void requestRebuild()
 	{
-		if(ready)
-		{
-			rebuild = true;
-		}
+		rebuild = true;
 	}
 
 	private void rebuildProject()
 	{
+		File lock = new File(getRootDirectory(), ".secretary/active-build.lock");
+		ChronoLatch cl = new ChronoLatch(3000);
+		while(lock.exists())
+		{
+			try
+			{
+				Thread.sleep(1);
+			}
+
+			catch(InterruptedException e)
+			{
+				e.printStackTrace();
+			}
+
+			if(cl.flip())
+			{
+				log("Waiting for another server to finish building this project. If this never unlocks, please delete " + lock.getAbsolutePath());
+			}
+		}
+
+		lock.getParentFile().mkdirs();
+
+		try
+		{
+			lock.createNewFile();
+		}
+
+		catch(Throwable e)
+		{
+			log("Tried to create a lock file but another server stole our thunder. Waiting again......");
+			rebuildProject();
+			return;
+		}
+
+		lock.deleteOnExit();
 		ready = false;
 		log("Building " + getProjectName());
 		lastBuild = M.ms();
@@ -341,6 +375,8 @@ public class MavenProject extends Thread implements IProject
 				log("Build Successful on " + getProjectName() + " in " + F.time(px.getMilliseconds(), 2));
 				px.end();
 				status = "Injecting";
+				lock.delete();
+				rebuild = false;
 				J.s(() -> install());
 			}
 
@@ -348,17 +384,22 @@ public class MavenProject extends Thread implements IProject
 			{
 				status = "Monitoring " + watching.getName();
 				ready = true;
+				rebuild = false;
 				log("Build Failure on " + getProjectName() + ". Took " + F.time(px.getMilliseconds(), 2));
+				lock.delete();
 				return;
 			}
 		}
 
 		catch(Throwable e)
 		{
+			lock.delete();
 			log("Failure on " + getProjectName() + " (" + failure + ")");
 			e.printStackTrace();
 			ready = true;
 		}
+
+		lock.delete();
 	}
 
 	private void install()
@@ -386,14 +427,15 @@ public class MavenProject extends Thread implements IProject
 
 	private boolean buildProject() throws IOException, InterruptedException
 	{
-		File folder = Secretary.vpi.getDataFile("caches", "maven", "apache-maven-3.6.2", "bin", "mvn").getParentFile();
-		File file = Secretary.vpi.getDataFile("caches", "maven", "apache-maven-3.6.2", "bin", "mvn");
+		return buildProject(true);
+	}
+
+	private boolean buildProject(boolean usePath) throws IOException, InterruptedException
+	{
 		GList<String> pars = new GList<>();
 		pars.add("cmd");
 		pars.add("/c");
-		pars.add("\"\"");
-		pars.add("/d\"" + folder.getAbsolutePath() + "\"");
-		pars.add("\"" + file.getName() + "\"");
+		pars.add(usePath ? "mvn" : (Secretary.vpi.getDataFile("caches", "maven", "apache-maven-3.6.2", "bin", "mvn").getAbsolutePath()));
 		pars.add(getRunCommand().split("\\Q \\E"));
 		ProcessBuilder pb = new ProcessBuilder(pars.toArray(new String[pars.size()]));
 		pb.directory(getRootDirectory());

@@ -16,6 +16,12 @@
           <include>**/*.txt</include>
         </includes>
       </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>**/*.mp3</include>
+        </includes>
+      </resource>
     </resources>
     <plugins>
       <plugin>
@@ -36,7 +42,7 @@
               <shadedPattern>com.volmit.secretary.volume</shadedPattern>
             </relocation>
           </relocations>
-          <minimizeJar>false</minimizeJar>
+          <minimizeJar>true</minimizeJar>
         </configuration>
       </plugin>
       <plugin>

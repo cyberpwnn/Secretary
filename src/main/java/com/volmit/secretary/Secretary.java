@@ -12,6 +12,9 @@ import com.volmit.volume.bukkit.command.CommandTag;
 import com.volmit.volume.bukkit.pawn.Start;
 import com.volmit.volume.bukkit.pawn.Stop;
 
+import javazoom.jl.player.FactoryRegistry;
+import javazoom.jl.player.advanced.AdvancedPlayer;
+
 @CommandTag("&e[&8Secretary&e]&7: ")
 public class Secretary extends VolumePlugin
 {
@@ -37,5 +40,18 @@ public class Secretary extends VolumePlugin
 	public void stop()
 	{
 
+	}
+
+	public static void play(String sound)
+	{
+		try
+		{
+			new AdvancedPlayer(Secretary.class.getResourceAsStream("/" + sound + ".mp3"), FactoryRegistry.systemRegistry().createAudioDevice()).play();
+		}
+
+		catch(Throwable e)
+		{
+			e.printStackTrace();
+		}
 	}
 }

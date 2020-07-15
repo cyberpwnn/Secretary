@@ -10,7 +10,7 @@ public class FileWatcher
 {
 	private final FileAlterationMonitor monitor;
 
-	public FileWatcher(File folder, boolean jarsOnly, Runnable somethingHappened) throws Exception
+	public FileWatcher(File folder, boolean jarsOnly, boolean pomOnly, Runnable somethingHappened) throws Exception
 	{
 		FileAlterationObserver o = new FileAlterationObserver(folder);
 		o.addListener(new FileAlterationListener()
@@ -33,6 +33,14 @@ public class FileWatcher
 				if(jarsOnly)
 				{
 					if(f.isFile() && f.getName().endsWith(".jar"))
+					{
+						somethingHappened.run();
+					}
+				}
+
+				else if(pomOnly)
+				{
+					if(f.isFile() && f.getName().equals("pom.xml"))
 					{
 						somethingHappened.run();
 					}

@@ -34,7 +34,7 @@
 							<shadedPattern>com.volmit.secretary.volume</shadedPattern>
 						</relocation>
 					</relocations>
-					<minimizeJar>false</minimizeJar>
+					<minimizeJar>true</minimizeJar>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -70,6 +70,13 @@
 					<include>**/*.txt</include>
 				</includes>
 			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>false</filtering>
+				<includes>
+					<include>**/*.mp3</include>
+				</includes>
+			</resource>
 		</resources>
 	</build>
 	<repositories>
@@ -91,6 +98,11 @@
 		</repository>
 	</repositories>
 	<dependencies>
+		<dependency>
+			<groupId>javazoom</groupId>
+			<artifactId>jlayer</artifactId>
+			<version>1.0.1</version>
+		</dependency>
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot-api</artifactId>

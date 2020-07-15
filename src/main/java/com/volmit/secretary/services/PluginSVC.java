@@ -175,7 +175,7 @@ public class PluginSVC implements IService
 
 						catch(Throwable e)
 						{
-
+							e.printStackTrace();
 						}
 					}
 				}
@@ -259,7 +259,7 @@ public class PluginSVC implements IService
 							{
 								System.out.println("Download Failed!");
 							}
-						}, new URL("http://apache.mirrors.lucidnetworks.net/maven/maven-3/3.6.2/binaries/apache-maven-3.6.2-bin.zip"), Secretary.vpi.getDataFile("caches", "maven.zip"), 16932).start();
+						}, new URL("https://apache.claz.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip"), Secretary.vpi.getDataFile("caches", "maven.zip"), 16932).start();
 					}
 
 					catch(IOException e)

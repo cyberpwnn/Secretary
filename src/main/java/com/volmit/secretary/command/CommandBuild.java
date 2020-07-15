@@ -4,11 +4,15 @@ import java.io.File;
 
 import com.volmit.secretary.services.PluginSVC;
 import com.volmit.volume.bukkit.U;
+import com.volmit.volume.bukkit.command.Command;
 import com.volmit.volume.bukkit.command.PawnCommand;
 import com.volmit.volume.bukkit.command.VolumeSender;
 
 public class CommandBuild extends PawnCommand
 {
+	@Command
+	public CommandBuildServer bs;
+	
 	public CommandBuild()
 	{
 		super("build", "b", "rb", "rebuild");

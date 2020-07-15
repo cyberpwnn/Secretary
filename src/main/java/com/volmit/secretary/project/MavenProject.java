@@ -1,23 +1,19 @@
 package com.volmit.secretary.project;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 import com.volmit.secretary.Secretary;
 import com.volmit.secretary.services.PluginSVC;
-import com.volmit.secretary.util.nmp.FrameType;
 import com.volmit.secretary.util.nmp.J;
-import com.volmit.secretary.util.nmp.NMP;
 import com.volmit.volume.bukkit.U;
 import com.volmit.volume.bukkit.task.S;
 import com.volmit.volume.bukkit.util.text.C;
@@ -128,7 +124,8 @@ public class MavenProject extends Thread implements IProject
 		}
 
 		MavenXpp3Reader reader = new MavenXpp3Reader();
-		Model model = reader.read(new FileReader(getRootDirectory().getAbsolutePath() + "/pom.xml"));
+		Model model = reader.read(new FileInputStream(getRootDirectory().getAbsolutePath() + "/pom.xml"));
+
 		version = model.getVersion();
 		artifactId = model.getArtifactId();
 		groupId = model.getArtifactId();
@@ -239,7 +236,6 @@ public class MavenProject extends Thread implements IProject
 				for(Player i : Bukkit.getOnlinePlayers())
 				{
 					i.sendMessage(tag + s);
-					NMP.MESSAGE.advance(i, new ItemStack(Material.NETHER_STAR), C.GRAY + s, FrameType.GOAL);
 
 					if(s.toLowerCase().contains("injected"))
 					{
@@ -390,10 +386,14 @@ public class MavenProject extends Thread implements IProject
 
 	private boolean buildProject() throws IOException, InterruptedException
 	{
+		File folder = Secretary.vpi.getDataFile("caches", "maven", "apache-maven-3.6.2", "bin", "mvn").getParentFile();
+		File file = Secretary.vpi.getDataFile("caches", "maven", "apache-maven-3.6.2", "bin", "mvn");
 		GList<String> pars = new GList<>();
 		pars.add("cmd");
 		pars.add("/c");
-		pars.add(Secretary.vpi.getDataFile("caches", "maven", "apache-maven-3.6.2", "bin", "mvn").getAbsolutePath());
+		pars.add("\"\"");
+		pars.add("/d\"" + folder.getAbsolutePath() + "\"");
+		pars.add("\"" + file.getName() + "\"");
 		pars.add(getRunCommand().split("\\Q \\E"));
 		ProcessBuilder pb = new ProcessBuilder(pars.toArray(new String[pars.size()]));
 		pb.directory(getRootDirectory());

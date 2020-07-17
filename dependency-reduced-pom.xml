@@ -4,7 +4,7 @@
   <groupId>com.volmit</groupId>
   <artifactId>Secretary</artifactId>
   <name>Secretary</name>
-  <version>1.0</version>
+  <version>1.0.1</version>
   <build>
     <resources>
       <resource>

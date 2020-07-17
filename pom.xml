@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.volmit</groupId>
 	<artifactId>Secretary</artifactId>
-	<version>1.0</version>
+	<version>1.0.1</version>
 	<name>Secretary</name>
 	<properties>
 		<development.location>${user.home}\Documents\development\server\plugins\${project.name}.jar</development.location>

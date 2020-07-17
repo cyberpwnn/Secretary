@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
-import com.volmit.volume.math.M;
+import ninja.bytecode.shuriken.math.M;
 
 public class Download
 {

@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
@@ -19,9 +20,11 @@ import com.volmit.volume.bukkit.task.S;
 import com.volmit.volume.bukkit.util.text.C;
 import com.volmit.volume.lang.collections.GList;
 import com.volmit.volume.lang.format.F;
-import com.volmit.volume.lang.queue.ChronoLatch;
-import com.volmit.volume.math.M;
-import com.volmit.volume.math.Profiler;
+
+import ninja.bytecode.shuriken.bench.PrecisionStopwatch;
+import ninja.bytecode.shuriken.execution.Looper;
+import ninja.bytecode.shuriken.math.M;
+import ninja.bytecode.shuriken.reaction.O;
 
 public class MavenProject extends Thread implements IProject
 {
@@ -321,41 +324,6 @@ public class MavenProject extends Thread implements IProject
 
 	private void rebuildProject()
 	{
-		File lock = new File(getRootDirectory(), ".secretary/active-build.lock");
-		ChronoLatch cl = new ChronoLatch(3000);
-		while(lock.exists())
-		{
-			try
-			{
-				Thread.sleep(1);
-			}
-
-			catch(InterruptedException e)
-			{
-				e.printStackTrace();
-			}
-
-			if(cl.flip())
-			{
-				log("Waiting for another server to finish building this project. If this never unlocks, please delete " + lock.getAbsolutePath());
-			}
-		}
-
-		lock.getParentFile().mkdirs();
-
-		try
-		{
-			lock.createNewFile();
-		}
-
-		catch(Throwable e)
-		{
-			log("Tried to create a lock file but another server stole our thunder. Waiting again......");
-			rebuildProject();
-			return;
-		}
-
-		lock.deleteOnExit();
 		ready = false;
 		log("Building " + getProjectName());
 		lastBuild = M.ms();
@@ -367,7 +335,7 @@ public class MavenProject extends Thread implements IProject
 			verifyMetadata();
 			status = "Rebuilding";
 			failure = "Failed to start maven build with command " + runcommand;
-			Profiler px = new Profiler();
+			PrecisionStopwatch px = new PrecisionStopwatch();
 			px.begin();
 
 			if(buildProject())
@@ -375,7 +343,6 @@ public class MavenProject extends Thread implements IProject
 				log("Build Successful on " + getProjectName() + " in " + F.time(px.getMilliseconds(), 2));
 				px.end();
 				status = "Injecting";
-				lock.delete();
 				rebuild = false;
 				J.s(() -> install());
 			}
@@ -386,20 +353,16 @@ public class MavenProject extends Thread implements IProject
 				ready = true;
 				rebuild = false;
 				log("Build Failure on " + getProjectName() + ". Took " + F.time(px.getMilliseconds(), 2));
-				lock.delete();
 				return;
 			}
 		}
 
 		catch(Throwable e)
 		{
-			lock.delete();
 			log("Failure on " + getProjectName() + " (" + failure + ")");
 			e.printStackTrace();
 			ready = true;
 		}
-
-		lock.delete();
 	}
 
 	private void install()
@@ -432,6 +395,8 @@ public class MavenProject extends Thread implements IProject
 
 	private boolean buildProject(boolean usePath) throws IOException, InterruptedException
 	{
+		rebuild = false;
+
 		GList<String> pars = new GList<>();
 		pars.add("cmd");
 		pars.add("/c");
@@ -440,9 +405,53 @@ public class MavenProject extends Thread implements IProject
 		ProcessBuilder pb = new ProcessBuilder(pars.toArray(new String[pars.size()]));
 		pb.directory(getRootDirectory());
 		Process p = pb.start();
+		O<Boolean> cancelled = new O<Boolean>().set(false);
+		Looper l = new Looper()
+		{
+			@Override
+			protected long loop()
+			{
+				if(rebuild)
+				{
+					Secretary.play("restart");
+					log("Build Cancelled. New Changes!");
+					p.destroyForcibly();
+					cancelled.set(true);
+
+					return -1;
+				}
+
+				return 150;
+			}
+		};
+		l.start();
+
 		new StreamGobbler(p.getInputStream(), (log) -> System.out.println(name + ": " + log));
 		new StreamGobbler(p.getErrorStream(), (log) -> log("Build Error: " + log));
-		return p.waitFor() == 0;
+
+		while(true)
+		{
+			try
+			{
+				if(p.waitFor(250, TimeUnit.MILLISECONDS))
+				{
+					if(cancelled.get())
+					{
+						return buildProject(usePath);
+					}
+
+					break;
+				}
+			}
+
+			catch(InterruptedException e)
+			{
+
+			}
+		}
+		l.interrupt();
+
+		return p.exitValue() == 0;
 	}
 
 	private void verifyMetadata() throws Exception

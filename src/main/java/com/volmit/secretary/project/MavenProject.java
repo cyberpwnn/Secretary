@@ -78,16 +78,16 @@ public class MavenProject extends Thread implements IProject
 		{
 			try
 			{
-				Thread.sleep(750);
+				Thread.sleep(250);
 
-				if(M.ms() - lastBuild > 2000 && rebuild && ready)
+				if(M.ms() - lastBuild > 500 && rebuild && ready)
 				{
 					rebuild = false;
 
 					if(!req && getMonitor().equals(MonitorMode.TARGET))
 					{
 						status = "Injecting";
-						Thread.sleep(1500);
+						Thread.sleep(250);
 						J.s(() -> install());
 						ready = true;
 						return;

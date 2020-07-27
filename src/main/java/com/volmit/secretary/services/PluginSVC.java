@@ -8,7 +8,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.UUID;
@@ -23,15 +22,11 @@ import org.inventivetalent.spiget.client.Callback;
 import org.inventivetalent.spiget.client.SpigetClient;
 import org.inventivetalent.spiget.downloader.SpigetDownloader;
 import org.spiget.client.SpigetDownload;
-import org.zeroturnaround.zip.ZipUtil;
 
 import com.google.common.io.Files;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.volmit.secretary.Secretary;
-import com.volmit.secretary.project.Download;
-import com.volmit.secretary.project.DownloadMonitor;
-import com.volmit.secretary.project.DownloadState;
 import com.volmit.secretary.project.IProject;
 import com.volmit.secretary.project.MavenProject;
 import com.volmit.secretary.util.MavenArtifact;
@@ -42,17 +37,14 @@ import com.volmit.volume.bukkit.pawn.Start;
 import com.volmit.volume.bukkit.pawn.Stop;
 import com.volmit.volume.bukkit.pawn.Tick;
 import com.volmit.volume.bukkit.service.IService;
-import com.volmit.volume.bukkit.task.A;
 import com.volmit.volume.bukkit.util.plugin.PluginUtil;
 import com.volmit.volume.lang.collections.C;
 import com.volmit.volume.lang.collections.GList;
 import com.volmit.volume.lang.collections.GMap;
 import com.volmit.volume.lang.collections.NetCache;
-import com.volmit.volume.lang.format.F;
 import com.volmit.volume.lang.io.VIO;
 import com.volmit.volume.lang.json.JSONArray;
 import com.volmit.volume.lang.json.JSONObject;
-import com.volmit.volume.lang.queue.ChronoLatch;
 
 public class PluginSVC implements IService
 {
@@ -202,79 +194,7 @@ public class PluginSVC implements IService
 		spiget = new SpigetClient();
 		pluginProjects = new GMap<>();
 		emptyProjects = new GList<>();
-		handleMaven();
-	}
-
-	private void handleMaven()
-	{
-		File f = Secretary.vpi.getDataFolder("caches", "maven");
-
-		if(!f.exists() || f.listFiles().length == 0)
-		{
-			f.mkdirs();
-			System.out.println("Downloading Maven...");
-			new A()
-			{
-				@Override
-				public void run()
-				{
-					try
-					{
-						ChronoLatch l = new ChronoLatch(500);
-
-						new Download(new DownloadMonitor()
-						{
-							@Override
-							public void onDownloadUpdateProgress(Download download, long bytes, long totalBytes, double percentComplete)
-							{
-								if(l.flip())
-								{
-									System.out.println("Downloading Maven: " + F.pc(percentComplete, 1));
-								}
-							}
-
-							@Override
-							public void onDownloadStateChanged(Download download, DownloadState from, DownloadState to)
-							{
-
-							}
-
-							@Override
-							public void onDownloadStarted(Download download)
-							{
-								System.out.println("Download Started");
-							}
-
-							@Override
-							public void onDownloadFinished(Download download)
-							{
-								System.out.println("Maven Downloaded, extracting...");
-								ZipUtil.unpack(Secretary.vpi.getDataFile("caches", "maven.zip"), Secretary.vpi.getDataFile("caches", "maven"));
-								System.out.println("Maven Cached at " + Secretary.vpi.getDataFile("caches", "maven").getPath());
-								rescanDev();
-							}
-
-							@Override
-							public void onDownloadFailed(Download download)
-							{
-								System.out.println("Download Failed!");
-							}
-						}, new URL("https://apache.claz.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip"), Secretary.vpi.getDataFile("caches", "maven.zip"), 16932).start();
-					}
-
-					catch(IOException e)
-					{
-						System.out.println("Download Failed!");
-						e.printStackTrace();
-					}
-				}
-			};
-		}
-
-		else
-		{
-			rescanDev();
-		}
+		rescanDev();
 	}
 
 	@Stop
@@ -505,6 +425,25 @@ public class PluginSVC implements IService
 			if(i.isFile() && i.getName().endsWith(".jar") && isPlugin(i) && getName(i).equals(p.getName()))
 			{
 				cache(p.getName() + "-" + p.getDescription().getMain(), i.getName());
+				return i;
+			}
+		}
+
+		return null;
+	}
+
+	public File getFileFor(String p)
+	{
+		if(isCached("pxname-" + p))
+		{
+			return new File(getCacheString("pxname-" + p));
+		}
+
+		for(File i : pluginFolder.listFiles())
+		{
+			if(i.isFile() && i.getName().endsWith(".jar") && isPlugin(i) && getName(i).equals(p))
+			{
+				cache("pxname-" + p, i.getAbsolutePath());
 				return i;
 			}
 		}
@@ -1081,8 +1020,12 @@ public class PluginSVC implements IService
 		{
 			if(string.equalsIgnoreCase(i.getProjectName()) || string.equalsIgnoreCase(i.getArtifactId()))
 			{
+				sender.sendMessage("Rebuilding " + i.getProjectName() + " " + i.getVersion());
 				i.rebuild();
+				return;
 			}
 		}
+
+		sender.sendMessage("Couldn't find the project '" + string + "'");
 	}
 }

@@ -18,6 +18,8 @@ import javazoom.jl.player.advanced.AdvancedPlayer;
 @CommandTag("&e[&8Secretary&e]&7: ")
 public class Secretary extends VolumePlugin
 {
+	public static Config config;
+	
 	@Command
 	public CommandSecretary cmdSec;
 
@@ -33,6 +35,7 @@ public class Secretary extends VolumePlugin
 	@Start
 	public void start()
 	{
+		config = Config.load();
 		U.startService(PluginSVC.class);
 	}
 

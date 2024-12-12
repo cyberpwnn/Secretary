@@ -29,6 +29,7 @@ import com.google.gson.JsonElement;
 import com.volmit.secretary.Secretary;
 import com.volmit.secretary.project.IProject;
 import com.volmit.secretary.project.MavenProject;
+import com.volmit.secretary.project.NetbeansProject;
 import com.volmit.secretary.util.MavenArtifact;
 import com.volmit.volume.bukkit.VolumePlugin;
 import com.volmit.volume.bukkit.command.VolumeSender;
@@ -128,12 +129,13 @@ public class PluginSVC implements IService
 
 			for(File i : getWorkspaceFolder().listFiles())
 			{
-				if(i.isDirectory())
+				if(i.isDirectory() && !i.getName().equals("Secretary"))
 				{
 					File f = new File(i, "pom.xml");
 					File p = new File(i, "src/main/resources/plugin.yml");
 					if(f.exists() && p.exists())
 					{
+						//System.out.println("Checking " + i.getName());
 						try
 						{
 							IProject proj = new MavenProject(i);
@@ -169,9 +171,47 @@ public class PluginSVC implements IService
 						{
 							e.printStackTrace();
 						}
+					} else {
+						f = new File(i, "build.xml");
+						p = new File(i, "src/plugin.yml");
+						if(f.exists() && p.exists()) {
+							try
+							{
+								IProject proj = new NetbeansProject(i);
+
+								boolean fx = false;
+
+								for(Plugin j : Bukkit.getPluginManager().getPlugins())
+								{
+									String mainPath = j.getDescription().getMain().replaceAll("\\Q.\\E", "/");
+									File c = new File(proj.getSrcDirectory(), mainPath + ".java");
+									if(c.exists())
+									{
+										pluginProjects.put(proj, j);
+										((NetbeansProject) proj).start();
+										System.out.println("Found Project: " + proj.toString());
+										fx = true;
+										break;
+									}
+								}
+
+								if(!fx)
+								{
+									System.out.println("Found Project: " + proj.toString() + " (couldnt find the plugin on the server yet though)");
+									emptyProjects.add(proj);
+									((NetbeansProject) proj).start();
+								}
+							}
+
+							catch(Throwable e)
+							{
+
+							}
+						}
 					}
 				}
 			}
+			System.out.println("Scanning Complete!");
 		}
 	}
 
@@ -483,7 +523,7 @@ public class PluginSVC implements IService
 		return cacheListing.has(name);
 	}
 
-	public void reinstall(MavenProject mavenProject, File artifact) throws IOException
+	public void reinstall(IProject mavenProject, File artifact) throws IOException
 	{
 		File ff = new File(new File("plugins"), artifact.getName());
 
@@ -494,20 +534,19 @@ public class PluginSVC implements IService
 
 		else
 		{
-			Plugin plugin = pluginProjects.get(mavenProject);
-			pluginProjects.remove(mavenProject);
+			Plugin plugin = pluginProjects.remove(mavenProject);
 
-			try
+			if(plugin != null)
 			{
-				if(plugin != null)
+				try
 				{
 					delete(plugin);
 				}
-			}
 
-			catch(Throwable e)
-			{
+				catch(Throwable e)
+				{
 
+				}
 			}
 		}
 

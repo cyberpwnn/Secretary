@@ -234,7 +234,11 @@ public enum MSound
 
 		catch(IllegalArgumentException e)
 		{
+			try{
 			return resolvedSound = Sound.valueOf(pre19sound);
+			}catch(IllegalArgumentException e2){
+				return resolvedSound = Sound.values()[1]; // I give up. No idea why Sound.valueOf("ENTITY_ENDEREYE_DEATH") fails in paper.
+			}
 		}
 	}
 }

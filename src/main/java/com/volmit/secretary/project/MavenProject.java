@@ -383,7 +383,8 @@ public class MavenProject extends Thread implements IProject
 		status = "Monitoring " + watching.getName();
 	}
 
-	private File getArtifact()
+	@Override
+	public File getArtifact()
 	{
 		return new File(getTargetDirectory(), getProjectName() + "-" + getVersion() + ".jar");
 	}
